@@ -549,59 +549,6 @@
     FayClient.configure({ baseURL: cfg.fayURL, useWs: cfg.fayUseWs });
   }
 
-  // 刷新两个模块的「模式指示条」
-  function refreshModeStrips() {
-    const chipR = $("report-mode-chip");
-    const engineR = $("report-engine-label");
-    const chipO = $("office-mode-chip");
-    const engineO = $("office-engine-label");
-
-    // 报告助手
-    if (chipR) {
-      chipR.classList.remove("mode-backend", "mode-fay");
-      if (cfg.mode === "backend") {
-        chipR.textContent = "后端模式 · SmartBrief";
-        chipR.classList.add("mode-backend");
-        engineR.textContent = "FastAPI /api/report/generate （SmartBrief 生成架构 · MIT）";
-      } else if (cfg.mode === "fay") {
-        chipR.textContent = "Fay 后端模式";
-        chipR.classList.add("mode-fay");
-        engineR.textContent = "浏览器内联引擎 + Fay 数字人（报告助手走前端）";
-      } else {
-        chipR.textContent = "浏览器端模式";
-        engineR.textContent = "前端内联引擎（演示模式，可切后端启用 SmartBrief）";
-      }
-    }
-
-    // 办公助手
-    if (chipO) {
-      chipO.classList.remove("mode-backend", "mode-fay");
-      if (cfg.mode === "backend") {
-        chipO.textContent = "后端模式 · open-schedule-agent";
-        chipO.classList.add("mode-backend");
-        engineO.textContent = "FastAPI /api/schedule + /api/tickets （调度代理架构 · MIT）";
-      } else if (cfg.mode === "fay") {
-        chipO.textContent = "Fay 后端模式";
-        chipO.classList.add("mode-fay");
-        engineO.textContent = "浏览器内联代理 + Fay 数字人（办公助手走前端）";
-      } else {
-        chipO.textContent = "浏览器端模式";
-        engineO.textContent = "前端内联代理（演示模式，可切后端启用 open-schedule-agent）";
-      }
-    }
-  }
-  refreshModeStrips();
-  // 每次应用设置都刷新指示条
-  const _origApply = applyCfg; applyCfg = function () { _origApply(); refreshModeStrips(); };
-
-  // 两个「切换到开源后端模式」按钮：直接打开设置并切到大脑/模式 Tab
-  if ($("report-open-settings")) {
-    $("report-open-settings").addEventListener("click", () => openSettings("tab-mode"));
-  }
-  if ($("office-open-settings")) {
-    $("office-open-settings").addEventListener("click", () => openSettings("tab-mode"));
-  }
-
   // 首次友好提示
   if (!cfg.apiKey && cfg.mode === "browser") {
     voiceHint.textContent = "未检测到 API Key → 点击左侧设置(也可试试:今日能耗 离线设备 园区介绍 等已内置示例)";
