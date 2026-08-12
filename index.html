@@ -102,6 +102,17 @@
         <h1>AI 报告助手</h1>
         <span class="brand-sub">智能生成 · 在线编辑 · 多格式导出</span>
       </header>
+      <div class="mode-strip" id="report-mode-strip">
+        <div class="mode-strip-left">
+          <span class="mode-chip" id="report-mode-chip">浏览器端模式</span>
+          <span class="mode-strip-label">当前报告生成引擎：</span>
+          <span class="mode-strip-engine" id="report-engine-label">前端内联引擎（演示模式）</span>
+        </div>
+        <div class="mode-strip-right">
+          <a class="muted-link" href="https://github.com/ch4nhm/SmartBrief" target="_blank" rel="noopener">基于 SmartBrief · MIT</a>
+          <button type="button" class="btn btn-secondary" id="report-open-settings" style="padding:4px 12px">切换到开源后端模式</button>
+        </div>
+      </div>
       <div class="report-layout">
         <!-- 左侧：模板与配置 -->
         <div class="report-sidebar">
@@ -206,6 +217,17 @@
         <h1>AI 办公助手</h1>
         <span class="brand-sub">自然语言交互 · 智能会议 · 工单管理</span>
       </header>
+      <div class="mode-strip" id="office-mode-strip">
+        <div class="mode-strip-left">
+          <span class="mode-chip" id="office-mode-chip">浏览器端模式</span>
+          <span class="mode-strip-label">当前调度代理：</span>
+          <span class="mode-strip-engine" id="office-engine-label">前端内联代理（演示模式）</span>
+        </div>
+        <div class="mode-strip-right">
+          <a class="muted-link" href="https://github.com/anthroos/open-schedule-agent" target="_blank" rel="noopener">基于 open-schedule-agent · MIT</a>
+          <button type="button" class="btn btn-secondary" id="office-open-settings" style="padding:4px 12px">切换到开源后端模式</button>
+        </div>
+      </div>
       <div class="office-layout">
         <!-- 左侧：对话区 -->
         <div class="office-chat">
@@ -354,8 +376,11 @@
             <label class="radio-item">
               <input type="radio" name="mode" value="backend" />
               <div>
-                <div class="radio-title">自托管后端模式（参考 SmartBrief + open-schedule-agent）</div>
-                <div class="radio-desc">部署 backend/ FastAPI 服务，AI 报告助手与 AI 办公助手均走后端。GitHub Pages 仍托管前端。</div>
+                <div class="radio-title">自托管后端模式（✓ SmartBrief + ✓ open-schedule-agent）</div>
+                <div class="radio-desc">
+                  报告生成引擎基于 <b>SmartBrief (MIT)</b> 适配；调度代理基于 <b>open-schedule-agent (MIT)</b> 适配。
+                  需部署 <code>backend/</code> FastAPI 服务（Render / Railway / 本地），GitHub Pages 仍托管前端。
+                </div>
               </div>
             </label>
             <label class="radio-item">
@@ -367,11 +392,15 @@
             </label>
           </div>
           <div id="backend-config" class="sub-section" style="display:none">
-            <h4 class="section-title">自托管后端配置</h4>
+            <h4 class="section-title">自托管后端配置（SmartBrief + open-schedule-agent）</h4>
+            <div class="hint-block">
+              <b>AI 报告助手 ← SmartBrief (MIT)</b>：<a href="https://github.com/ch4nhm/SmartBrief" target="_blank" rel="noopener">github.com/ch4nhm/SmartBrief</a><br/>
+              <b>AI 办公助手 ← open-schedule-agent (MIT)</b>：<a href="https://github.com/anthroos/open-schedule-agent" target="_blank" rel="noopener">github.com/anthroos/open-schedule-agent</a>
+            </div>
             <div class="form-group">
               <label>后端地址 (backendURL)</label>
               <input id="cfg-backend-url" type="text" placeholder="https://aipro-xxxx.onrender.com 或 http://127.0.0.1:8001" />
-              <small>部署方法见 backend/README.md（Render/Railway/本地均可）。后端集成自 SmartBrief (MIT) + open-schedule-agent (MIT)。</small>
+              <small>部署方法见 backend/README.md（Render/Railway/本地均可）。</small>
             </div>
             <div class="form-group">
               <button id="btn-test-backend" type="button" class="btn btn-secondary" style="padding:6px 12px">测试连通性</button>
