@@ -3,77 +3,330 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI 数字人 · 开源验证 Demo</title>
+  <title>AI 智能平台 · 数字人 / 报告助手 / 办公助手</title>
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
+  <!-- 侧边栏导航 -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
       <span class="brand-dot"></span>
-      <h1>AI 数字人</h1>
-      <span class="brand-sub" id="mode-indicator">浏览器端模式</span>
+      <span class="sidebar-title">AI 智能平台</span>
     </div>
-    <div class="topbar-actions">
+    <nav class="sidebar-nav">
+      <a class="nav-item active" data-view="digital-human">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="8" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/>
+        </svg>
+        <span>AI 数字人</span>
+      </a>
+      <a class="nav-item" data-view="report">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <span>AI 报告助手</span>
+      </a>
+      <a class="nav-item" data-view="office">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+        <span>AI 办公助手</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
       <button id="btn-settings" class="icon-btn" title="设置">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"/>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
+        <span>设置</span>
       </button>
     </div>
-  </header>
+  </aside>
 
-  <main class="stage">
-    <!-- 数字人形象区 -->
-    <section class="avatar-zone">
-      <div class="avatar-stage" id="avatar-stage">
-        <!-- SVG 数字人由 avatar.js 注入 -->
-      </div>
-      <div class="avatar-meta">
-        <div class="status-pill" id="status-pill">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-text">待命中</span>
-        </div>
-        <div class="persona-switcher" id="persona-switcher">
-          <!-- 形象切换按钮由 app.js 注入 -->
-        </div>
-      </div>
-      <div class="voice-hint" id="voice-hint">
-        点击下方麦克风开始语音对话,或直接文字输入
+  <!-- 主内容区 -->
+  <main class="content">
+    <!-- ========== 视图1：AI 数字人 ========== -->
+    <section id="view-digital-human" class="view active">
+      <header class="view-header">
+        <h1>AI 数字人</h1>
+        <span class="brand-sub" id="mode-indicator">浏览器端模式</span>
+      </header>
+      <div class="dh-stage">
+        <section class="avatar-zone">
+          <div class="avatar-stage" id="avatar-stage"></div>
+          <div class="avatar-meta">
+            <div class="status-pill" id="status-pill">
+              <span class="status-dot" id="status-dot"></span>
+              <span id="status-text">待命中</span>
+            </div>
+            <div class="persona-switcher" id="persona-switcher"></div>
+          </div>
+          <div class="voice-hint" id="voice-hint">
+            点击下方麦克风开始语音对话,或直接文字输入
+          </div>
+        </section>
+        <section class="chat-zone">
+          <div class="chat-header">
+            <h2>对话</h2>
+            <button id="btn-clear" class="text-btn">清空</button>
+          </div>
+          <div class="chat-log" id="chat-log">
+            <div class="msg msg-bot">
+              <div class="msg-avatar">AI</div>
+              <div class="msg-bubble">你好!我是 AI 数字人。选择以下任一模式即可开始对话:
+                <br/>① <b>浏览器端模式</b>(推荐快速上手):在设置里填入 DeepSeek API Key
+                <br/>② <b>Fay 后端模式</b>(完整能力):本地启动 Fay 项目,在设置中配置后端地址
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <button id="btn-mic" class="mic-btn" title="按住说话 / 点击切换">
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            </button>
+            <input id="text-input" type="text" placeholder="输入消息,回车发送... (试试看:今日能耗 / 离线设备)" autocomplete="off" />
+            <button id="btn-send" class="send-btn">发送</button>
+          </div>
+        </section>
       </div>
     </section>
 
-    <!-- 对话区 -->
-    <section class="chat-zone">
-      <div class="chat-header">
-        <h2>对话</h2>
-        <button id="btn-clear" class="text-btn">清空</button>
-      </div>
-      <div class="chat-log" id="chat-log">
-        <div class="msg msg-bot">
-          <div class="msg-avatar">AI</div>
-          <div class="msg-bubble">你好!我是 AI 数字人。选择以下任一模式即可开始对话:
-            <br/>① <b>浏览器端模式</b>(推荐快速上手):在设置里填入 DeepSeek API Key
-            <br/>② <b>Fay 后端模式</b>(完整能力):本地启动 Fay 项目,在设置中配置后端地址
+    <!-- ========== 视图2：AI 报告助手 ========== -->
+    <section id="view-report" class="view">
+      <header class="view-header">
+        <h1>AI 报告助手</h1>
+        <span class="brand-sub">智能生成 · 在线编辑 · 多格式导出</span>
+      </header>
+      <div class="report-layout">
+        <!-- 左侧：模板与配置 -->
+        <div class="report-sidebar">
+          <h3 class="panel-title">报告模板</h3>
+          <div class="template-cards" id="template-cards">
+            <div class="template-card active" data-template="weekly">
+              <div class="tc-icon">W</div>
+              <div class="tc-name">周报</div>
+            </div>
+            <div class="template-card" data-template="monthly">
+              <div class="tc-icon">M</div>
+              <div class="tc-name">月报</div>
+            </div>
+          </div>
+
+          <h3 class="panel-title">报告类型</h3>
+          <div class="type-cards" id="type-cards">
+            <div class="type-card active" data-type="energy">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              <span>能耗分析报告</span>
+            </div>
+            <div class="type-card" data-type="device">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span>设备运行报告</span>
+            </div>
+            <div class="type-card" data-type="security">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>安防态势报告</span>
+            </div>
+          </div>
+
+          <h3 class="panel-title">时间范围</h3>
+          <div class="form-group">
+            <label>开始日期</label>
+            <input type="date" id="report-start" class="date-input" />
+          </div>
+          <div class="form-group">
+            <label>结束日期</label>
+            <input type="date" id="report-end" class="date-input" />
+          </div>
+
+          <div class="report-gen-area">
+            <button id="btn-generate-report" class="primary-btn full-width">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+              生成报告
+            </button>
+            <div class="gen-steps" id="gen-steps" style="display:none">
+              <div class="gen-step" data-step="1"><span class="gs-num">1</span><span class="gs-label">分析模板与参数</span></div>
+              <div class="gen-step" data-step="2"><span class="gs-num">2</span><span class="gs-label">采集数据</span></div>
+              <div class="gen-step" data-step="3"><span class="gs-num">3</span><span class="gs-label">AI 生成内容</span></div>
+              <div class="gen-step" data-step="4"><span class="gs-num">4</span><span class="gs-label">渲染报告</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧：报告编辑区 -->
+        <div class="report-main">
+          <div class="report-toolbar">
+            <div class="toolbar-group">
+              <button class="tool-btn" id="rt-bold" title="加粗"><b>B</b></button>
+              <button class="tool-btn" id="rt-italic" title="斜体"><i>I</i></button>
+              <button class="tool-btn" id="rt-underline" title="下划线"><u>U</u></button>
+              <div class="tool-divider"></div>
+              <select class="tool-select" id="rt-fontsize">
+                <option value="2">小</option>
+                <option value="3" selected>正常</option>
+                <option value="4">大</option>
+                <option value="5">标题</option>
+              </select>
+            </div>
+            <div class="toolbar-group">
+              <button class="tool-btn" id="btn-add-chart" title="插入图表">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                插入图表
+              </button>
+              <button class="tool-btn" id="btn-export-word">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                导出 Word
+              </button>
+              <button class="tool-btn" id="btn-export-pdf">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                导出 PDF
+              </button>
+            </div>
+          </div>
+          <div class="report-editor-wrap">
+            <div class="report-editor" id="report-editor" contenteditable="true">
+              <div class="report-placeholder">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <p>选择模板、类型和时间范围后，点击「生成报告」</p>
+                <p class="sub">AI 将自动生成报告内容，生成后可在此在线编辑</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="chat-input-bar">
-        <button id="btn-mic" class="mic-btn" title="按住说话 / 点击切换">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-        </button>
-        <input id="text-input" type="text" placeholder="输入消息,回车发送... (试试看:今日能耗 / 离线设备)" autocomplete="off" />
-        <button id="btn-send" class="send-btn">发送</button>
+    </section>
+
+    <!-- ========== 视图3：AI 办公助手 ========== -->
+    <section id="view-office" class="view">
+      <header class="view-header">
+        <h1>AI 办公助手</h1>
+        <span class="brand-sub">自然语言交互 · 智能会议 · 工单管理</span>
+      </header>
+      <div class="office-layout">
+        <!-- 左侧：对话区 -->
+        <div class="office-chat">
+          <div class="chat-header">
+            <h2>智能助手</h2>
+            <button id="office-clear" class="text-btn">清空</button>
+          </div>
+          <div class="chat-log" id="office-chat-log">
+            <div class="msg msg-bot">
+              <div class="msg-avatar">AI</div>
+              <div class="msg-bubble">您好！我是 AI 办公助手，可以帮您：
+                <br/>📅 <b>安排会议</b>：如"帮我安排明天下午3点的项目评审会，参会人张三、李四"
+                <br/>🎫 <b>管理工单</b>：如"查询我名下所有未完成的工单"或"创建工单：A栋3层空调故障"
+                <br/>请直接输入您的需求。
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-bar">
+            <input id="office-input" type="text" placeholder="输入指令，如：帮我安排明天下午3点的项目评审会..." autocomplete="off" />
+            <button id="office-send" class="send-btn">发送</button>
+          </div>
+        </div>
+
+        <!-- 右侧：操作面板 -->
+        <div class="office-panel">
+          <div class="office-tabs">
+            <button class="office-tab active" data-otab="meeting">会议安排</button>
+            <button class="office-tab" data-otab="ticket">工单管理</button>
+          </div>
+
+          <!-- 会议安排 Tab -->
+          <div class="office-tab-content active" id="otab-meeting">
+            <div class="panel-scroll">
+              <div class="meeting-empty" id="meeting-empty">
+                <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.3"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <p>通过对话安排会议</p>
+                <p class="sub">AI 将自动解析会议信息并推荐可用会议室</p>
+              </div>
+              <div class="meeting-detail" id="meeting-detail" style="display:none">
+                <div class="detail-section">
+                  <h4>会议信息</h4>
+                  <div class="detail-grid" id="meeting-info"></div>
+                </div>
+                <div class="detail-section">
+                  <h4>参会人</h4>
+                  <div class="attendee-list" id="meeting-attendees"></div>
+                </div>
+                <div class="detail-section">
+                  <h4>推荐会议室</h4>
+                  <div class="room-list" id="meeting-rooms"></div>
+                </div>
+                <button class="primary-btn full-width" id="btn-confirm-meeting">确认并发送邀约</button>
+              </div>
+              <div class="detail-section">
+                <h4>近期会议</h4>
+                <div class="meeting-list" id="meeting-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 工单管理 Tab -->
+          <div class="office-tab-content" id="otab-ticket" style="display:none">
+            <div class="panel-scroll">
+              <div class="ticket-toolbar">
+                <select id="ticket-filter" class="tool-select">
+                  <option value="all">全部工单</option>
+                  <option value="open">未完成</option>
+                  <option value="closed">已完成</option>
+                </select>
+                <button class="tool-btn" id="btn-new-ticket">+ 新建工单</button>
+              </div>
+              <div class="ticket-list" id="ticket-list"></div>
+              <div class="ticket-form-modal" id="ticket-form-modal" style="display:none">
+                <div class="ticket-form">
+                  <h4>工单详情（AI 自动填充）</h4>
+                  <div class="form-group">
+                    <label>标题</label>
+                    <input type="text" id="tf-title" />
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>类型</label>
+                      <select id="tf-type">
+                        <option value="维修">维修</option>
+                        <option value="巡检">巡检</option>
+                        <option value="投诉">投诉</option>
+                        <option value="咨询">咨询</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>优先级</label>
+                      <select id="tf-priority">
+                        <option value="低">低</option>
+                        <option value="中">中</option>
+                        <option value="高">高</option>
+                        <option value="紧急">紧急</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>位置</label>
+                    <input type="text" id="tf-location" />
+                  </div>
+                  <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="tf-desc" rows="3"></textarea>
+                  </div>
+                  <div class="form-row">
+                    <button class="tool-btn" id="btn-cancel-ticket">取消</button>
+                    <button class="primary-btn" id="btn-submit-ticket">提交工单</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- 设置弹窗 (多 Tab) -->
+  <!-- 设置弹窗（共享） -->
   <div class="modal-mask" id="settings-modal">
     <div class="modal modal-lg">
       <div class="modal-header">
@@ -106,7 +359,6 @@
               </div>
             </label>
           </div>
-
           <div id="browser-config" class="sub-section">
             <h4 class="section-title">LLM API 配置</h4>
             <div class="form-group">
@@ -117,7 +369,7 @@
             <div class="form-group">
               <label>API Key</label>
               <input id="cfg-apikey" type="password" placeholder="sk-..." />
-              <small>仅保存在浏览器 localStorage,不会上传</small>
+              <small>仅保存在浏览器 localStorage,不会上传。数字人/报告/办公助手共享此配置。</small>
             </div>
             <div class="form-group">
               <label>模型</label>
@@ -125,11 +377,10 @@
               <small>DeepSeek 推荐 deepseek-chat;通义千问推荐 qwen-plus</small>
             </div>
             <div class="form-group">
-              <label>人设 (System Prompt)</label>
+              <label>数字人设 (System Prompt)</label>
               <textarea id="cfg-persona" rows="3" placeholder="你是一个友好的园区智能助手..."></textarea>
             </div>
           </div>
-
           <div id="fay-config" class="sub-section" style="display:none">
             <h4 class="section-title">Fay 后端配置</h4>
             <div class="form-group">
@@ -190,7 +441,6 @@
             <label>数字人名称</label>
             <input id="cfg-name" type="text" placeholder="小助" />
           </div>
-
           <h4 class="section-title">自定义头像</h4>
           <div class="form-group">
             <label>上传自定义图片 <small>(支持 JPG/PNG,会保存为本地 base64)</small></label>
@@ -200,7 +450,6 @@
             </div>
             <small>上传后立即替换左侧 SVG 形象。</small>
           </div>
-
           <h4 class="section-title">语音播报 (TTS)</h4>
           <div class="form-group">
             <label>TTS 引擎</label>
@@ -246,11 +495,15 @@
     </div>
   </div>
 
+  <!-- JS 模块 -->
+  <script src="js/shared.js"></script>
   <script src="js/avatar.js"></script>
   <script src="js/speech.js"></script>
   <script src="js/llm.js"></script>
   <script src="js/knowledge.js"></script>
   <script src="js/fay.js"></script>
+  <script src="js/report.js"></script>
+  <script src="js/office.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

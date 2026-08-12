@@ -1,58 +1,16 @@
-// 主应用逻辑 v2 —— 知识库 / Fay 后端 / 浏览器 LLM 三链路分流
+// 主应用逻辑 v3 —— 统一平台（数字人/报告/办公助手）+ 视图切换 + 共享配置
 (function () {
   "use strict";
 
-  const DEFAULT_CFG = {
-    // 模式
-    mode: "browser", // "browser" | "fay"
-    // 浏览器端 LLM
-    baseURL: "https://api.deepseek.com/v1",
-    apiKey: "",
-    model: "deepseek-chat",
-    persona: "你是一个友好的 AI 数字人助手,性格开朗、回答简洁有条理,擅长回答园区能耗、设备状态等业务问题。如果是园区数据类问题,优先给出数据;不确定时请说明。",
-    // Fay 后端
-    fayURL: "http://127.0.0.1:5000",
-    fayUseWs: false,
-    // 园区 API
-    campusName: "智慧产业园",
-    campusApis: {
-      energy: "",
-      energyTrend: "",
-      devices: "",
-      parkInfo: ""
-    },
-    // 形象 + 声音
-    name: "小助",
-    personaId: "tech",
-    customAvatar: "", // base64
-    ttsEngine: "browser", // "browser" | "fay"
-    voice: "",
-    rate: 1,
-    // 知识库
-    kbEnabled: true
-  };
-
-  function loadCfg() {
-    try {
-      const raw = localStorage.getItem("ai_dh_cfg");
-      if (!raw) return { ...DEFAULT_CFG, campusApis: { ...DEFAULT_CFG.campusApis } };
-      const parsed = JSON.parse(raw);
-      return {
-        ...DEFAULT_CFG,
-        ...parsed,
-        campusApis: { ...DEFAULT_CFG.campusApis, ...(parsed.campusApis || {}) }
-      };
-    } catch {
-      return { ...DEFAULT_CFG, campusApis: { ...DEFAULT_CFG.campusApis } };
-    }
-  }
-  function saveCfg(cfg) {
-    localStorage.setItem("ai_dh_cfg", JSON.stringify(cfg));
+  // 使用共享配置
+  let cfg = Shared.cfg;
+  function saveCfg() {
+    Shared.cfg = cfg;
+    Shared.saveCfg(cfg);
   }
 
-  let cfg = loadCfg();
   let messages = [];
-  const $ = (id) => document.getElementById(id);
+  const $ = Shared.$;
   const chatLog = $("chat-log");
   const textInput = $("text-input");
   const micBtn = $("btn-mic");
@@ -61,6 +19,13 @@
   const statusText = $("status-text");
   const voiceHint = $("voice-hint");
   const modeIndicator = $("mode-indicator");
+
+  // ===== 视图切换 =====
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      Shared.switchView(item.dataset.view);
+    });
+  });
 
   function setStatus(state, label) {
     statusPill.className = "status-pill " + state;
@@ -84,10 +49,10 @@
     return b;
   }
 
-  // ===== 播报处理(根据 TTS 引擎选择) =====
+  // ===== 播报处理 =====
   function speak(text) {
     if (cfg.ttsEngine === "fay" && cfg.mode === "fay") {
-      // Fay 模式下由后端返回音频(预留),这里仍默认浏览器播报,可切换
+      // Fay 模式下由后端返回音频（预留）
     }
     TTS.speak(text, { rate: cfg.rate });
   }
@@ -101,7 +66,7 @@
     setStatus("idle", "待命中");
   };
 
-  // ===== 主流程:根据模式分流 =====
+  // ===== 主流程：根据模式分流 =====
   async function handleUserInput(text) {
     text = text.trim();
     if (!text) return;
@@ -109,7 +74,7 @@
     messages.push({ role: "user", content: text });
     textInput.value = "";
 
-    // 1) 知识库(静态 + 园区 API 动态)
+    // 1) 知识库（静态 + 园区 API 动态）
     if (cfg.kbEnabled) {
       const hit = await Knowledge.query(text);
       if (hit.matched) {
@@ -122,7 +87,7 @@
     if (cfg.mode === "fay") {
       await callFayBackend(text);
     } else {
-      await callBrowserLLM(text);
+      await callBrowserLLM();
     }
   }
 
@@ -133,10 +98,10 @@
     setTimeout(() => speak(text), 100);
   }
 
-  // ===== 浏览器端 LLM(流式) =====
+  // ===== 浏览器端 LLM（流式） =====
   async function callBrowserLLM() {
     if (!cfg.apiKey) {
-      await respond("尚未配置 API Key。请点击右上角设置 → 大脑/模式 → 选择浏览器端模式并填入 DeepSeek API Key。\n或切换到 Fay 后端模式(需本地运行 Fay)。");
+      await respond("尚未配置 API Key。请点击左侧设置 → 大脑/模式 → 选择浏览器端模式并填入 DeepSeek API Key。\n或切换到 Fay 后端模式(需本地运行 Fay)。");
       return;
     }
     setStatus("thinking", "思考中");
@@ -167,10 +132,10 @@
     }
   }
 
-  // ===== Fay 后端(HTTP 或 WebSocket 流式) =====
+  // ===== Fay 后端 =====
   async function callFayBackend(text) {
     if (!cfg.fayURL) {
-      await respond("Fay 后端地址未配置。请点击右上角设置 → 大脑/模式 → Fay 后端模式,填入后端地址(如 http://127.0.0.1:5000)并启动 Fay。");
+      await respond("Fay 后端地址未配置。请点击设置 → 大脑/模式 → Fay 后端模式,填入后端地址。");
       return;
     }
     setStatus("thinking", "Fay 处理中");
@@ -186,7 +151,7 @@
     try {
       const ans = await FayClient.sendText(text, { sessionId: "demo_" + Date.now().toString(36).slice(-4) });
       if (ans && !full) full = ans;
-      if (!full) full = "⚠️ Fay 返回空响应,请检查后端日志确认接口地址是否正确。";
+      if (!full) full = "⚠️ Fay 返回空响应,请检查后端日志。";
       bubble.textContent = full;
       Avatar.setThinking(false);
       messages.push({ role: "assistant", content: full });
@@ -194,7 +159,7 @@
     } catch (err) {
       Avatar.setThinking(false);
       setStatus("idle", "待命中");
-      bubble.textContent = "Fay 后端连接失败:" + err.message + "\n请确认 Fay 已启动(python main.py start)且地址正确。CORS 问题:请在 Fay 后端允许跨域。";
+      bubble.textContent = "Fay 后端连接失败:" + err.message + "\n请确认 Fay 已启动且地址正确。";
       bubble.style.color = "#ff6b6b";
     }
   }
@@ -251,7 +216,7 @@
         cfg.personaId = p.id;
         Avatar.switchTo(p.id);
         cfg.customAvatar = "";
-        saveCfg(cfg);
+        saveCfg();
         renderPersonaSwitcher();
       });
       box.appendChild(b);
@@ -276,7 +241,7 @@
       document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
       document.querySelectorAll(".tab-panel").forEach((p) => (p.style.display = "none"));
-      document.getElementById(btn.dataset.tab).style.display = "block";
+      $(btn.dataset.tab).style.display = "block";
     });
   });
 
@@ -294,7 +259,7 @@
 
   // Fay 连接测试
   $("btn-fay-ping").addEventListener("click", async () => {
-    const url = $("cfg-fay-url").value.trim() || DEFAULT_CFG.fayURL;
+    const url = $("cfg-fay-url").value.trim() || Shared.DEFAULT_CFG.fayURL;
     FayClient.configure({ baseURL: url });
     const span = $("fay-ping-result");
     span.style.color = "#fbbf24";
@@ -417,15 +382,15 @@
     const prevMode = cfg.mode;
     cfg.mode = document.querySelector('input[name="mode"]:checked')?.value || "browser";
 
-    cfg.baseURL = $("cfg-baseurl").value.trim() || DEFAULT_CFG.baseURL;
+    cfg.baseURL = $("cfg-baseurl").value.trim() || Shared.DEFAULT_CFG.baseURL;
     cfg.apiKey = $("cfg-apikey").value.trim();
-    cfg.model = $("cfg-model").value.trim() || DEFAULT_CFG.model;
-    cfg.persona = $("cfg-persona").value.trim() || DEFAULT_CFG.persona;
+    cfg.model = $("cfg-model").value.trim() || Shared.DEFAULT_CFG.model;
+    cfg.persona = $("cfg-persona").value.trim() || Shared.DEFAULT_CFG.persona;
 
-    cfg.fayURL = $("cfg-fay-url").value.trim() || DEFAULT_CFG.fayURL;
+    cfg.fayURL = $("cfg-fay-url").value.trim() || Shared.DEFAULT_CFG.fayURL;
     cfg.fayUseWs = $("cfg-fay-ws").checked;
 
-    cfg.campusName = $("cfg-campus-name").value.trim() || DEFAULT_CFG.campusName;
+    cfg.campusName = $("cfg-campus-name").value.trim() || Shared.DEFAULT_CFG.campusName;
     cfg.campusApis = {
       energy: $("cfg-api-energy").value.trim(),
       energyTrend: $("cfg-api-energy-trend").value.trim(),
@@ -434,7 +399,7 @@
     };
     Knowledge.setApis(cfg.campusApis);
 
-    cfg.name = $("cfg-name").value.trim() || DEFAULT_CFG.name;
+    cfg.name = $("cfg-name").value.trim() || Shared.DEFAULT_CFG.name;
     cfg.ttsEngine = $("cfg-tts-engine").value || "browser";
     cfg.voice = $("cfg-voice").value;
     cfg.rate = parseFloat($("cfg-rate").value);
@@ -444,15 +409,14 @@
     TTS.setVoice(cfg.voice);
     TTS.rate = cfg.rate;
 
-    // 若切换到 Fay 模式,预先配置客户端
+    // 若切换到 Fay 模式，预先配置客户端
     if (cfg.mode === "fay") {
       FayClient.configure({ baseURL: cfg.fayURL, useWs: cfg.fayUseWs });
     } else if (prevMode === "fay") {
-      // 从 Fay 切回,关闭 WS
       try { FayClient.wsDisconnect(); } catch {}
     }
 
-    saveCfg(cfg);
+    saveCfg();
 
     // UI 更新
     modeIndicator.textContent = cfg.mode === "fay" ? `Fay 后端模式 · ${cfg.fayURL.replace(/^https?:\/\//, "")}` : "浏览器端模式";
@@ -485,6 +449,6 @@
 
   // 首次友好提示
   if (!cfg.apiKey && cfg.mode === "browser") {
-    voiceHint.textContent = "未检测到 API Key → 点击右上角设置(也可试试:今日能耗 离线设备 园区介绍 等已内置示例)";
+    voiceHint.textContent = "未检测到 API Key → 点击左侧设置(也可试试:今日能耗 离线设备 园区介绍 等已内置示例)";
   }
 })();
