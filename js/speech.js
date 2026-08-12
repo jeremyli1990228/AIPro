@@ -1,55 +1,112 @@
 // Web Speech API 封装 —— ASR 语音识别 + TTS 语音合成
+// 移动端适配：iOS Safari / Android Chrome / 微信浏览器
 (function (global) {
   "use strict";
 
   const SR = global.SpeechRecognition || global.webkitSpeechRecognition;
   const SS = global.speechSynthesis;
 
+  const IS_MOBILE = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const IS_IOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const IS_HTTPS = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
   const ASR = {
     rec: null,
     listening: false,
     onResult: null,
     onEnd: null,
+    onError: null,
     supported: !!SR,
+    errorMsg: "",
 
     start(lang = "zh-CN") {
+      this.errorMsg = "";
       if (!SR) {
-        alert("当前浏览器不支持语音识别(SpeechRecognition)。请使用 Chrome/Edge。");
+        this.errorMsg = "当前浏览器不支持语音识别。iOS 请使用 Safari，Android 请使用 Chrome。";
+        if (global.confirm) alert(this.errorMsg);
+        return false;
+      }
+      if (!IS_HTTPS) {
+        this.errorMsg = "语音识别需要 HTTPS 协议或 localhost 环境。当前协议：" + location.protocol;
+        if (global.confirm) alert(this.errorMsg);
         return false;
       }
       if (this.listening) {
         this.stop();
         return false;
       }
-      const rec = new SR();
-      rec.lang = lang;
-      rec.continuous = false;
-      rec.interimResults = false;
-      rec.maxAlternatives = 1;
 
-      rec.onresult = (e) => {
-        const text = e.results[0][0].transcript;
-        if (this.onResult) this.onResult(text);
-      };
-      rec.onerror = (e) => {
-        console.warn("ASR error:", e.error);
-        this.listening = false;
-        if (this.onEnd) this.onEnd();
-      };
-      rec.onend = () => {
-        this.listening = false;
-        if (this.onEnd) this.onEnd();
-      };
+      try {
+        const rec = new SR();
+        rec.lang = lang;
+        rec.continuous = IS_IOS;
+        rec.interimResults = false;
+        rec.maxAlternatives = 1;
 
-      rec.start();
-      this.rec = rec;
-      this.listening = true;
-      return true;
+        rec.onstart = () => {
+          this.listening = true;
+        };
+
+        rec.onresult = (e) => {
+          const result = e.results[e.results.length - 1];
+          if (result && result.isFinal) {
+            const text = result[0].transcript;
+            if (this.onResult) this.onResult(text);
+          }
+        };
+
+        rec.onerror = (e) => {
+          const err = e.error || "unknown";
+          switch (err) {
+            case "not-allowed":
+              this.errorMsg = "麦克风权限被拒绝。请在浏览器设置中允许访问麦克风。";
+              break;
+            case "service-not-allowed":
+              this.errorMsg = "语音服务不可用。请确保使用 HTTPS 或 localhost 访问。";
+              break;
+            case "no-speech":
+              this.errorMsg = "未检测到语音，请重试。";
+              break;
+            case "audio-capture":
+              this.errorMsg = "未检测到麦克风设备。";
+              break;
+            case "network":
+              this.errorMsg = "网络错误，语音识别需要联网。";
+              break;
+            default:
+              this.errorMsg = "语音识别错误：" + err;
+          }
+          this.listening = false;
+          if (this.onError) this.onError(this.errorMsg);
+          if (this.onEnd) this.onEnd();
+        };
+
+        rec.onend = () => {
+          this.listening = false;
+          if (this.onEnd) this.onEnd();
+        };
+
+        rec.start();
+        this.rec = rec;
+        return true;
+      } catch (err) {
+        this.errorMsg = "启动语音识别失败：" + err.message;
+        this.listening = false;
+        if (this.onError) this.onError(this.errorMsg);
+        return false;
+      }
     },
 
     stop() {
       if (this.rec && this.listening) {
-        this.rec.stop();
+        try { this.rec.stop(); } catch (_) {}
+      }
+      this.listening = false;
+    },
+
+    cancel() {
+      if (this.rec) {
+        try { this.rec.abort(); } catch (_) {}
       }
       this.listening = false;
     }
@@ -68,7 +125,6 @@
     loadVoices() {
       if (!SS) return [];
       this.voices = SS.getVoices();
-      // 优先选择中文语音
       const zh = this.voices.filter((v) => /zh|cmn/i.test(v.lang));
       if (zh.length) this.voice = zh[0];
       return this.voices;
@@ -85,7 +141,7 @@
         if (this.onEnd) this.onEnd();
         return;
       }
-      SS.cancel(); // 打断上一句
+      SS.cancel();
 
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang;
@@ -114,7 +170,6 @@
     }
   };
 
-  // Chrome 加载语音有延迟
   if (SS) {
     SS.onvoiceschanged = () => TTS.loadVoices();
     TTS.loadVoices();
@@ -122,4 +177,7 @@
 
   global.ASR = ASR;
   global.TTS = TTS;
+  global.IS_MOBILE = IS_MOBILE;
+  global.IS_IOS = IS_IOS;
+  global.IS_HTTPS = IS_HTTPS;
 })(window);

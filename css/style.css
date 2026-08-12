@@ -25,9 +25,14 @@ html, body {
   background: radial-gradient(1200px 800px at 20% 0%, #1e2452 0%, var(--bg) 55%);
   color: var(--text);
   overflow: hidden;
+  /* 移动端安全区域 */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
-body { display: flex; }
+body { display: flex; height: 100dvh; }
 
 /* ===== 侧边栏 ===== */
 .sidebar {
@@ -79,8 +84,8 @@ body { display: flex; }
 .sidebar-footer .icon-btn { width: 100%; justify-content: flex-start; gap: 10px; padding: 10px 14px; }
 
 /* ===== 主内容区 ===== */
-.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-.view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.content { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.view { display: none; flex: 1; flex-direction: column; overflow: hidden; min-width: 0; }
 .view.active { display: flex; }
 
 .view-header {
@@ -611,13 +616,90 @@ body { display: flex; }
   .report-layout { grid-template-columns: 240px 1fr; }
   .office-layout { grid-template-columns: 1fr 320px; }
 }
+
+/* ===== 平板/小桌面 (≤820px) ===== */
 @media (max-width: 820px) {
   .sidebar { width: 56px; }
-  .sidebar-title, .nav-item span:not(svg), .sidebar-footer .icon-btn span { display: none; }
+  .sidebar-title, .nav-item span, .sidebar-footer .icon-btn span { display: none; }
   .nav-item { justify-content: center; padding: 12px; }
   .sidebar-footer .icon-btn { justify-content: center; padding: 12px; }
-  .dh-stage { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .dh-stage { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .report-layout { grid-template-columns: 1fr; }
-  .office-layout { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .office-layout { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .brand-sub { display: none; }
+  .avatar-stage { width: min(260px, 60%); }
+  .chat-log { max-height: 40vh; }
+  .content { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ===== 手机 (≤480px) ===== */
+@media (max-width: 480px) {
+  :root { --sidebar-w: 48px; }
+  .sidebar { width: var(--sidebar-w); position: fixed; bottom: 0; left: 0; top: auto; height: auto; flex-direction: row; border-right: none; border-top: 1px solid var(--panel-border); z-index: 20; padding-bottom: env(safe-area-inset-bottom); }
+  .sidebar-brand { display: none; }
+  .sidebar-nav { flex-direction: row; padding: 8px 4px; gap: 2px; flex: 1; }
+  .sidebar-footer { display: none; }
+  .nav-item { width: 44px; height: 44px; padding: 8px; justify-content: center; }
+  .content { margin-left: 0; padding-bottom: calc(56px + env(safe-area-inset-bottom)); overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .view { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .view-header { padding: 10px 14px; }
+  .view-header h1 { font-size: 16px; }
+  .dh-stage { padding: 10px; gap: 10px; }
+  .avatar-zone { padding: 16px; min-height: 300px; }
+  .avatar-stage { width: min(200px, 55%); }
+  .avatar-meta { gap: 8px; margin-top: 8px; }
+  .persona-switcher { gap: 6px; }
+  .persona-btn { padding: 5px 10px; font-size: 11px; }
+  .chat-zone, .office-chat { min-height: 50vh; }
+  .chat-log { padding: 10px 12px; gap: 10px; }
+  .msg { max-width: 95%; }
+  .msg-bubble { padding: 8px 12px; font-size: 13px; }
+  .chat-input-bar { padding: 8px 10px; gap: 8px; position: sticky; bottom: 0; background: rgba(15, 18, 38, 0.95); backdrop-filter: blur(8px); }
+  .mic-btn { width: 48px; height: 48px; flex-shrink: 0; }
+  .mic-btn svg { width: 22px; height: 22px; }
+  #text-input, #office-input { height: 44px; font-size: 16px; }
+  .send-btn { height: 44px; padding: 0 14px; font-size: 13px; }
+  .report-layout { padding: 10px; gap: 10px; }
+  .report-sidebar { padding: 12px; }
+  .report-main { min-height: 60vh; }
+  .report-toolbar { padding: 8px 10px; }
+  .report-editor-wrap { padding: 12px 16px; }
+  .report-editor h1 { font-size: 18px; }
+  .report-editor h2 { font-size: 15px; }
+  .office-layout { padding: 10px; gap: 10px; }
+  .office-chat { min-height: 40vh; }
+  .office-panel { min-height: 30vh; }
+  .office-tabs { position: sticky; top: 0; z-index: 1; }
+  .modal { width: 96vw; max-height: 92vh; }
+  .modal-header { padding: 12px 16px; }
+  .modal-body { padding: 14px 16px; }
+  .tabs { padding: 0 10px; }
+  .tab-btn { padding: 10px 10px; font-size: 12px; }
+  .form-group input[type="text"],
+  .form-group input[type="password"],
+  .form-group input[type="date"],
+  .form-group textarea,
+  .form-group select { font-size: 16px; }
+  .template-cards { grid-template-columns: 1fr 1fr; }
+  .ticket-form { width: 96vw; padding: 16px; }
+}
+
+/* ===== 移动端触摸优化 ===== */
+@media (hover: none) {
+  .nav-item, .persona-btn, .mic-btn, .send-btn, .tool-btn, .primary-btn, .icon-btn, .template-card, .type-card, .room-card, .ticket-item, .meeting-item {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .mic-btn { transition: transform 0.1s; }
+  .mic-btn:active { transform: scale(0.92); }
+  .mic-btn.recording:active { transform: scale(0.95); }
+}
+
+/* ===== 横屏适配 ===== */
+@media (max-height: 500px) and (orientation: landscape) {
+  .avatar-stage { width: min(160px, 40%); }
+  .avatar-zone { padding: 12px; min-height: 200px; }
+  .avatar-meta { margin-top: 6px; gap: 6px; }
+  .persona-switcher { display: none; }
 }

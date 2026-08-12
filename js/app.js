@@ -4,6 +4,8 @@
 
   // 使用共享配置
   let cfg = Shared.cfg;
+  const IS_MOBILE = window.IS_MOBILE || false;
+  const IS_HTTPS = window.IS_HTTPS !== false;
   function saveCfg() {
     Shared.cfg = cfg;
     Shared.saveCfg(cfg);
@@ -164,35 +166,98 @@
     }
   }
 
-  // ===== 语音输入 =====
+  // ===== 语音输入（移动端适配） =====
   let micLock = false;
-  micBtn.addEventListener("click", () => {
+  let micLockTimer = null;
+
+  function startVoiceInput() {
     if (micLock) return;
     micLock = true;
+    if (micLockTimer) { clearTimeout(micLockTimer); micLockTimer = null; }
+
     if (!ASR.supported) {
-      alert("当前浏览器不支持语音识别。请使用 Chrome 或 Edge 浏览器。");
+      showVoiceError("当前浏览器不支持语音识别。iOS 请使用 Safari，Android 请使用 Chrome。");
       micLock = false;
       return;
     }
+    if (!IS_HTTPS) {
+      showVoiceError("语音识别需要 HTTPS 或 localhost 环境。<br/>当前：" + location.protocol + "<br/><small>本地访问用 http://localhost:8000</small>");
+      micLock = false;
+      return;
+    }
+
     if (ASR.listening) { ASR.stop(); return; }
+
     TTS.stop();
     Avatar.setSpeaking(false);
     setStatus("listening", "聆听中");
     micBtn.classList.add("recording");
-    voiceHint.textContent = "正在聆听...再次点击麦克风结束";
+    voiceHint.textContent = "正在聆听...再次点击结束录音";
 
     ASR.onResult = (t) => {
-      voiceHint.textContent = "识别到:" + t;
-      handleUserInput(t);
+      if (t && t.trim()) {
+        voiceHint.textContent = "识别到：" + t;
+        handleUserInput(t);
+      }
+    };
+    ASR.onError = (msg) => {
+      showVoiceError(msg);
     };
     ASR.onEnd = () => {
       micBtn.classList.remove("recording");
       micLock = false;
-      voiceHint.textContent = "点击下方麦克风开始语音对话,或直接文字输入";
+      voiceHint.textContent = "点击下方麦克风开始语音对话，或直接文字输入";
       if (statusPill.classList.contains("listening")) setStatus("idle", "待命中");
     };
-    ASR.start("zh-CN");
+
+    const ok = ASR.start("zh-CN");
+    if (!ok) {
+      micLock = false;
+      micBtn.classList.remove("recording");
+      if (ASR.errorMsg) showVoiceError(ASR.errorMsg);
+    }
+  }
+
+  function stopVoiceInput() {
+    if (ASR.listening) {
+      ASR.stop();
+    } else {
+      micLock = false;
+      micBtn.classList.remove("recording");
+      voiceHint.textContent = "点击下方麦克风开始语音对话，或直接文字输入";
+      if (statusPill.classList.contains("listening")) setStatus("idle", "待命中");
+    }
+  }
+
+  function showVoiceError(msg) {
+    voiceHint.innerHTML = msg;
+    voiceHint.style.color = "var(--danger)";
+    setTimeout(() => { voiceHint.style.color = ""; }, 5000);
+  }
+
+  micBtn.addEventListener("click", () => {
+    if (ASR.listening) {
+      stopVoiceInput();
+    } else {
+      startVoiceInput();
+    }
   });
+
+  // 移动端：防止触摸时 click 事件延迟 / 双重触发
+  if (IS_MOBILE) {
+    let lastTouchTime = 0;
+    micBtn.addEventListener("touchend", (e) => {
+      e.preventDefault();
+      const now = Date.now();
+      if (now - lastTouchTime < 300) return;
+      lastTouchTime = now;
+      if (ASR.listening) {
+        stopVoiceInput();
+      } else {
+        startVoiceInput();
+      }
+    }, { passive: false });
+  }
 
   sendBtn.addEventListener("click", () => handleUserInput(textInput.value));
   textInput.addEventListener("keydown", (e) => { if (e.key === "Enter") handleUserInput(textInput.value); });
