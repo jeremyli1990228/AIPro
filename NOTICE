@@ -1,0 +1,34 @@
+# 第三方开源组件声明 (NOTICE)
+
+本项目（AI 智能平台，仓库：https://github.com/jeremyli1990228/AIPro）参考/集成了以下开源项目：
+
+## 1. SmartBrief - AI 智能工作报告生成器
+
+- 用途：AI 报告助手后端（backend/modules/report_engine.py）的架构与生成模式参考
+- License: MIT License
+- Copyright (c) 2024 jx&chm
+- 源项目地址: https://github.com/ch4nhm/SmartBrief
+- 参考内容：模板选择 + 时间范围 + 多模型 AI 生成的核心模式
+
+## 2. open-schedule-agent (schedulebot)
+
+- 用途：AI 办公助手后端（backend/modules/schedule_agent.py）的调度代理模式参考
+- License: MIT License
+- Copyright (c) 2026 Ivan Paschnyk / WeLabelData Inc.
+- 源项目地址: https://github.com/anthroos/open-schedule-agent
+- 参考内容：自然语言 → 解析 → 查可用性 → 推荐 → 预订的代理流程
+
+## 3. Fay 数字人框架
+
+- 用途：AI 数字人后端对接（fay_backend.py / js/fay.js）
+- License: MIT License
+- 源项目地址: https://github.com/TheRamU/Fay
+
+---
+
+## License
+
+本项目主体代码采用 MIT License，详见 LICENSE 文件。
+
+上述开源项目的版权声明与许可证要求（保留版权声明、许可证声明）已在本文件中保留。
+各参考模块的具体实现已在对应源文件头部注明出处。

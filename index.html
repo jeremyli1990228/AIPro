@@ -352,12 +352,31 @@
               </div>
             </label>
             <label class="radio-item">
+              <input type="radio" name="mode" value="backend" />
+              <div>
+                <div class="radio-title">自托管后端模式（参考 SmartBrief + open-schedule-agent）</div>
+                <div class="radio-desc">部署 backend/ FastAPI 服务，AI 报告助手与 AI 办公助手均走后端。GitHub Pages 仍托管前端。</div>
+              </div>
+            </label>
+            <label class="radio-item">
               <input type="radio" name="mode" value="fay" />
               <div>
                 <div class="radio-title">Fay 后端模式</div>
                 <div class="radio-desc">本地运行 Fay(python main.py),通过 HTTP / WebSocket 对接,启用完整 ASR/LLM/TTS/知识库/Agent 能力。</div>
               </div>
             </label>
+          </div>
+          <div id="backend-config" class="sub-section" style="display:none">
+            <h4 class="section-title">自托管后端配置</h4>
+            <div class="form-group">
+              <label>后端地址 (backendURL)</label>
+              <input id="cfg-backend-url" type="text" placeholder="https://aipro-xxxx.onrender.com 或 http://127.0.0.1:8001" />
+              <small>部署方法见 backend/README.md（Render/Railway/本地均可）。后端集成自 SmartBrief (MIT) + open-schedule-agent (MIT)。</small>
+            </div>
+            <div class="form-group">
+              <button id="btn-test-backend" type="button" class="btn btn-secondary" style="padding:6px 12px">测试连通性</button>
+              <small id="backend-test-result" style="margin-left:8px"></small>
+            </div>
           </div>
           <div id="browser-config" class="sub-section">
             <h4 class="section-title">LLM API 配置</h4>

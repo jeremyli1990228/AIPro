@@ -4,6 +4,10 @@
 
   const DEFAULT_CFG = {
     mode: "browser",
+    // mode: "browser"  纯前端，浏览器直连 LLM API（GitHub Pages 演示用）
+    // mode: "backend"  调用自托管 FastAPI 后端（完整功能，需部署 backend/）
+    // mode: "fay"      对接 Fay 数字人后端
+    backendURL: "",          // 后端模式时的 FastAPI 地址，如 https://aipro-xxxx.onrender.com
     baseURL: "https://api.deepseek.com/v1",
     apiKey: "",
     model: "deepseek-chat",
@@ -85,6 +89,75 @@
     });
   }
 
+  // ===== 后端 API 封装（mode === "backend" 时使用） =====
+  // 后端参考 SmartBrief (MIT) + open-schedule-agent (MIT) 实现，详见 backend/README.md
+  function backendBase() {
+    const u = (cfg.backendURL || "").trim().replace(/\/+$/, "");
+    if (!u) throw new Error("尚未配置后端地址（设置 → 后端模式 → backendURL）");
+    return u;
+  }
+
+  async function backendPost(path, body) {
+    const url = backendBase() + path;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body || {})
+    });
+    if (!resp.ok) {
+      let detail = "";
+      try { detail = (await resp.json()).detail || ""; } catch (_) {}
+      throw new Error(`后端返回 ${resp.status}: ${detail || resp.statusText}`);
+    }
+    return await resp.json();
+  }
+
+  async function backendGet(path, query) {
+    let url = backendBase() + path;
+    if (query && typeof query === "object") {
+      const qs = new URLSearchParams();
+      Object.entries(query).forEach(([k, v]) => { if (v != null) qs.set(k, v); });
+      const s = qs.toString();
+      if (s) url += "?" + s;
+    }
+    const resp = await fetch(url, { method: "GET" });
+    if (!resp.ok) {
+      throw new Error(`后端返回 ${resp.status}: ${resp.statusText}`);
+    }
+    return await resp.json();
+  }
+
+  // 是否使用后端模式（用于 report.js / office.js 判断走哪条路径）
+  function useBackend() {
+    return cfg.mode === "backend" && !!(cfg.backendURL || "").trim();
+  }
+
+  // 后端 API 命名空间
+  const Backend = {
+    base: backendBase,
+    post: backendPost,
+    get: backendGet,
+    useBackend,
+    // 报告助手
+    report: {
+      generate: (payload) => backendPost("/api/report/generate", payload)
+    },
+    // 办公助手 - 会议
+    schedule: {
+      rooms: () => backendGet("/api/schedule/rooms"),
+      parse: (text) => backendPost("/api/schedule/parse", { text }),
+      book: (meeting, roomId) => backendPost("/api/schedule/book", { meeting, roomId }),
+      bookings: () => backendGet("/api/schedule/bookings")
+    },
+    // 办公助手 - 工单
+    tickets: {
+      list: (status) => backendGet("/api/tickets", { status }),
+      create: (ticket) => backendPost("/api/tickets", ticket),
+      parse: (text) => backendPost("/api/tickets/parse", { text })
+    },
+    health: () => backendGet("/api/health")
+  };
+
   // 工具
   const $ = (id) => document.getElementById(id);
 
@@ -96,6 +169,8 @@
     llm,
     switchView,
     $,
+    Backend,
+    useBackend,
     // 同步外部对 cfg 的修改
     syncCfg() { cfg = Shared.cfg; }
   };

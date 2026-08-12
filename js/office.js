@@ -36,6 +36,7 @@
   let currentMeeting = null;   // 当前正在编辑/确认的会议
   let selectedRoomId = null;   // 当前选中的会议室
   let sending = false;         // 防止重复发送
+  let pendingRecommendedRooms = null;  // 后端返回的推荐会议室（后端模式用）
 
   // ===== 工具函数 =====
   function hasApiKey() {
@@ -358,7 +359,7 @@
   }
 
   // 确认会议并发送邀约
-  function confirmMeeting() {
+  async function confirmMeeting() {
     if (!currentMeeting) {
       addBotMsg("当前没有待确认的会议。您可以在对话框中告诉我会议安排需求。");
       return;
@@ -368,8 +369,23 @@
       switchOTab("meeting");
       return;
     }
-    const room = ROOMS.find((r) => r.id === selectedRoomId);
+    const room = ROOMS.find((r) => r.id === selectedRoomId) ||
+      (pendingRecommendedRooms || []).find((r) => r.id === selectedRoomId);
     const m = Object.assign({}, currentMeeting, { room: room ? room.name : "", roomId: selectedRoomId });
+
+    // 后端模式：调用 /api/schedule/book 落库
+    if (global.Shared && global.Shared.useBackend && global.Shared.useBackend()) {
+      try {
+        const r = await global.Shared.Backend.schedule.book(currentMeeting, selectedRoomId);
+        if (r.booking) {
+          m.id = r.booking.id;
+        }
+      } catch (err) {
+        addBotMsg("会议室预订失败：" + err.message);
+        return;
+      }
+    }
+
     meetings.unshift(m);
     saveMeetings();
     renderMeetingList();
@@ -383,6 +399,7 @@
     addBotMsg(summary);
 
     resetMeetingPanel();
+    pendingRecommendedRooms = null;
   }
 
   function renderMeetingList() {
@@ -465,21 +482,41 @@
     $("ticket-form-modal").style.display = "none";
   }
 
-  function submitTicket() {
+  async function submitTicket() {
     const title = $("tf-title").value.trim();
     if (!title) { alert("请填写工单标题"); return; }
-    const ticket = {
-      id: genTicketId(),
+    const payload = {
       title,
       type: $("tf-type").value,
       priority: $("tf-priority").value,
-      status: "open",
       location: $("tf-location").value.trim() || "未指定",
-      desc: $("tf-desc").value.trim(),
-      createTime: nowStr()
+      desc: $("tf-desc").value.trim()
     };
-    tickets.unshift(ticket);
-    saveTickets();
+
+    let ticket;
+    if (global.Shared && global.Shared.useBackend && global.Shared.useBackend()) {
+      // 后端模式：调用 /api/tickets 落库
+      try {
+        const r = await global.Shared.Backend.tickets.create(payload);
+        ticket = r.ticket;
+      } catch (err) {
+        addBotMsg("工单创建失败：" + err.message);
+        return;
+      }
+      // 同步后端最新列表
+      try {
+        const r2 = await global.Shared.Backend.tickets.list("all");
+        if (r2.tickets) { tickets = r2.tickets; saveTickets(); }
+      } catch (_) {}
+    } else {
+      ticket = Object.assign({}, payload, {
+        id: genTicketId(),
+        status: "open",
+        createTime: nowStr()
+      });
+      tickets.unshift(ticket);
+      saveTickets();
+    }
     renderTickets();
     closeTicketForm();
     addBotMsg(
@@ -521,12 +558,20 @@
     const thinking = addBotMsg("正在为您解析会议信息，请稍候...");
     let meeting = null;
     try {
-      if (hasApiKey()) {
+      if (global.Shared && global.Shared.useBackend && global.Shared.useBackend()) {
+        // 后端模式：调用 FastAPI /api/schedule/parse（参考 open-schedule-agent 调度代理模式）
+        const r = await global.Shared.Backend.schedule.parse(text);
+        meeting = r.meeting;
+        // 后端同时返回推荐会议室，直接渲染
+        if (r.recommendedRooms && Array.isArray(r.recommendedRooms)) {
+          pendingRecommendedRooms = r.recommendedRooms;
+        }
+      } else if (hasApiKey()) {
         meeting = await llmParseMeeting(text);
       }
     } catch (err) {
-      // LLM 调用失败，降级到本地解析
-      console.warn("[OfficeApp] 会议解析 LLM 失败，降级本地解析:", err);
+      // LLM/后端调用失败，降级到本地解析
+      console.warn("[OfficeApp] 会议解析失败，降级本地解析:", err);
     }
     if (!meeting || !meeting.title) {
       meeting = localParseMeeting(text);
@@ -552,11 +597,15 @@
     const thinking = addBotMsg("正在为您解析工单信息，请稍候...");
     let data = null;
     try {
-      if (hasApiKey()) {
+      if (global.Shared && global.Shared.useBackend && global.Shared.useBackend()) {
+        // 后端模式：调用 FastAPI /api/tickets/parse
+        const r = await global.Shared.Backend.tickets.parse(text);
+        data = r.ticket;
+      } else if (hasApiKey()) {
         data = await llmParseTicket(text);
       }
     } catch (err) {
-      console.warn("[OfficeApp] 工单解析 LLM 失败，降级本地解析:", err);
+      console.warn("[OfficeApp] 工单解析失败，降级本地解析:", err);
     }
     if (!data || !data.title) {
       data = localParseTicket(text);
@@ -654,6 +703,17 @@
     // 加载持久化数据
     loadTickets();
     loadMeetings();
+
+    // 后端模式：异步从后端同步工单列表
+    if (global.Shared && global.Shared.useBackend && global.Shared.useBackend()) {
+      global.Shared.Backend.tickets.list("all").then((r) => {
+        if (r && Array.isArray(r.tickets)) {
+          tickets = r.tickets;
+          saveTickets();
+          renderTickets();
+        }
+      }).catch((e) => console.warn("[OfficeApp] 后端工单同步失败:", e));
+    }
 
     // 渲染初始列表
     renderTickets();

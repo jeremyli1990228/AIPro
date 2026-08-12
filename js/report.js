@@ -351,13 +351,27 @@
       // 步骤3:AI 生成内容
       setStep(3, "active");
       var html = "";
-      var hasKey = Shared && Shared.cfg && Shared.cfg.apiKey;
-      if (hasKey) {
-        html = await generateByLLM(state.type, state.template, state.startDate, state.endDate, mockData);
+      var useBackend = Shared && Shared.useBackend && Shared.useBackend();
+      if (useBackend) {
+        // 后端模式：调用 FastAPI /api/report/generate（参考 SmartBrief 报告生成模式）
+        var campus = (Shared.cfg.campusName) || "智慧产业园";
+        var result = await Shared.Backend.report.generate({
+          template: state.template,
+          type: state.type,
+          startDate: state.startDate,
+          endDate: state.endDate,
+          campus: campus
+        });
+        html = result.content || buildSampleReport(state.type, state.template, state.startDate, state.endDate);
       } else {
-        // 无 API Key,使用示例报告
-        await sleep(600);
-        html = buildSampleReport(state.type, state.template, state.startDate, state.endDate);
+        var hasKey = Shared && Shared.cfg && Shared.cfg.apiKey;
+        if (hasKey) {
+          html = await generateByLLM(state.type, state.template, state.startDate, state.endDate, mockData);
+        } else {
+          // 无 API Key,使用示例报告
+          await sleep(600);
+          html = buildSampleReport(state.type, state.template, state.startDate, state.endDate);
+        }
       }
       setStep(3, "done");
 

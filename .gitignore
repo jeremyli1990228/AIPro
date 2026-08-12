@@ -4,3 +4,11 @@ Thumbs.db
 node_modules/
 .vscode/
 .idea/
+
+# 后端运行时文件（不要提交）
+backend/.env
+backend/__pycache__/
+backend/**/__pycache__/
+backend/data/
+backend/venv/
+backend/.venv/

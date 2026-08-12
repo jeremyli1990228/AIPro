@@ -253,8 +253,31 @@
         ri.classList.toggle("active", ri.querySelector("input").checked);
       });
       $("browser-config").style.display = v === "browser" ? "block" : "none";
+      $("backend-config").style.display = v === "backend" ? "block" : "none";
       $("fay-config").style.display = v === "fay" ? "block" : "none";
     });
+  });
+
+  // 自托管后端连通性测试
+  $("btn-test-backend").addEventListener("click", async () => {
+    const url = $("cfg-backend-url").value.trim();
+    const span = $("backend-test-result");
+    if (!url) { span.textContent = "请先填写后端地址"; span.style.color = "var(--warn)"; return; }
+    span.textContent = "测试中..."; span.style.color = "var(--text-dim)";
+    try {
+      const resp = await fetch(url.replace(/\/+$/, "") + "/api/health");
+      if (resp.ok) {
+        const data = await resp.json();
+        span.textContent = `✓ 连通成功 (${data.service || "OK"})`;
+        span.style.color = "var(--ok)";
+      } else {
+        span.textContent = `✗ HTTP ${resp.status}`;
+        span.style.color = "var(--danger)";
+      }
+    } catch (err) {
+      span.textContent = "✗ " + err.message;
+      span.style.color = "var(--danger)";
+    }
   });
 
   // Fay 连接测试
@@ -318,12 +341,16 @@
       ri.classList.toggle("active", ri.querySelector("input").checked);
     });
     $("browser-config").style.display = cfg.mode === "browser" ? "block" : "none";
+    $("backend-config").style.display = cfg.mode === "backend" ? "block" : "none";
     $("fay-config").style.display = cfg.mode === "fay" ? "block" : "none";
 
     $("cfg-baseurl").value = cfg.baseURL;
     $("cfg-apikey").value = cfg.apiKey;
     $("cfg-model").value = cfg.model;
     $("cfg-persona").value = cfg.persona;
+
+    $("cfg-backend-url").value = cfg.backendURL || "";
+    $("backend-test-result").textContent = "";
 
     $("cfg-fay-url").value = cfg.fayURL;
     $("cfg-fay-ws").checked = cfg.fayUseWs;
@@ -387,6 +414,8 @@
     cfg.model = $("cfg-model").value.trim() || Shared.DEFAULT_CFG.model;
     cfg.persona = $("cfg-persona").value.trim() || Shared.DEFAULT_CFG.persona;
 
+    cfg.backendURL = $("cfg-backend-url").value.trim();
+
     cfg.fayURL = $("cfg-fay-url").value.trim() || Shared.DEFAULT_CFG.fayURL;
     cfg.fayUseWs = $("cfg-fay-ws").checked;
 
@@ -419,7 +448,10 @@
     saveCfg();
 
     // UI 更新
-    modeIndicator.textContent = cfg.mode === "fay" ? `Fay 后端模式 · ${cfg.fayURL.replace(/^https?:\/\//, "")}` : "浏览器端模式";
+    modeIndicator.textContent =
+      cfg.mode === "fay" ? `Fay 后端模式 · ${cfg.fayURL.replace(/^https?:\/\//, "")}` :
+      cfg.mode === "backend" ? `自托管后端模式 · ${(cfg.backendURL || "未配置").replace(/^https?:\/\//, "")}` :
+      "浏览器端模式";
     chatLog.querySelectorAll(".msg-bot .msg-avatar").forEach((el) => { el.textContent = cfg.name.slice(0, 2); });
 
     modal.classList.remove("show");
@@ -439,9 +471,10 @@
   TTS.rate = cfg.rate;
   if (cfg.voice) TTS.setVoice(cfg.voice);
 
-  modeIndicator.textContent = cfg.mode === "fay"
-    ? `Fay 后端模式 · ${cfg.fayURL.replace(/^https?:\/\//, "")}`
-    : "浏览器端模式";
+  modeIndicator.textContent =
+    cfg.mode === "fay" ? `Fay 后端模式 · ${cfg.fayURL.replace(/^https?:\/\//, "")}` :
+    cfg.mode === "backend" ? `自托管后端模式 · ${(cfg.backendURL || "未配置").replace(/^https?:\/\//, "")}` :
+    "浏览器端模式";
 
   if (cfg.mode === "fay") {
     FayClient.configure({ baseURL: cfg.fayURL, useWs: cfg.fayUseWs });
