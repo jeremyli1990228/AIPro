@@ -11,13 +11,13 @@
     <div class="brand">
       <span class="brand-dot"></span>
       <h1>AI 数字人</h1>
-      <span class="brand-sub">开源验证 Demo · 浏览器端运行</span>
+      <span class="brand-sub" id="mode-indicator">浏览器端模式</span>
     </div>
     <div class="topbar-actions">
       <button id="btn-settings" class="icon-btn" title="设置">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
         </svg>
       </button>
     </div>
@@ -52,7 +52,10 @@
       <div class="chat-log" id="chat-log">
         <div class="msg msg-bot">
           <div class="msg-avatar">AI</div>
-          <div class="msg-bubble">你好!我是 AI 数字人。配置好 DeepSeek API Key 后即可开始对话。点击右上角设置按钮进行配置。</div>
+          <div class="msg-bubble">你好!我是 AI 数字人。选择以下任一模式即可开始对话:
+            <br/>① <b>浏览器端模式</b>(推荐快速上手):在设置里填入 DeepSeek API Key
+            <br/>② <b>Fay 后端模式</b>(完整能力):本地启动 Fay 项目,在设置中配置后端地址
+          </div>
         </div>
       </div>
       <div class="chat-input-bar">
@@ -64,56 +67,176 @@
             <line x1="8" y1="23" x2="16" y2="23"/>
           </svg>
         </button>
-        <input id="text-input" type="text" placeholder="输入消息,回车发送..." autocomplete="off" />
+        <input id="text-input" type="text" placeholder="输入消息,回车发送... (试试看:今日能耗 / 离线设备)" autocomplete="off" />
         <button id="btn-send" class="send-btn">发送</button>
       </div>
     </section>
   </main>
 
-  <!-- 设置弹窗 -->
+  <!-- 设置弹窗 (多 Tab) -->
   <div class="modal-mask" id="settings-modal">
-    <div class="modal">
+    <div class="modal modal-lg">
       <div class="modal-header">
         <h3>设置</h3>
         <button id="btn-close-settings" class="icon-btn">×</button>
       </div>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-mode">大脑/模式</button>
+        <button class="tab-btn" data-tab="tab-campus">园区 API</button>
+        <button class="tab-btn" data-tab="tab-avatar">形象/声音</button>
+        <button class="tab-btn" data-tab="tab-kb">知识库</button>
+      </div>
       <div class="modal-body">
-        <div class="form-group">
-          <label>API 地址 (Base URL)</label>
-          <input id="cfg-baseurl" type="text" placeholder="https://api.deepseek.com/v1" />
-          <small>DeepSeek 默认: https://api.deepseek.com/v1</small>
+        <!-- ========== Tab 大脑/模式 ========== -->
+        <div class="tab-panel" id="tab-mode">
+          <h4 class="section-title">对话后端模式</h4>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="mode" value="browser" />
+              <div>
+                <div class="radio-title">浏览器端模式</div>
+                <div class="radio-desc">直接调用 LLM API(如 DeepSeek),无需后端。推荐快速上手。</div>
+              </div>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="mode" value="fay" />
+              <div>
+                <div class="radio-title">Fay 后端模式</div>
+                <div class="radio-desc">本地运行 Fay(python main.py),通过 HTTP / WebSocket 对接,启用完整 ASR/LLM/TTS/知识库/Agent 能力。</div>
+              </div>
+            </label>
+          </div>
+
+          <div id="browser-config" class="sub-section">
+            <h4 class="section-title">LLM API 配置</h4>
+            <div class="form-group">
+              <label>Base URL</label>
+              <input id="cfg-baseurl" type="text" placeholder="https://api.deepseek.com/v1" />
+              <small>DeepSeek: https://api.deepseek.com/v1 · 通义千问:https://dashscope.aliyuncs.com/compatible-mode/v1 · 兼容 OpenAI 格式均可</small>
+            </div>
+            <div class="form-group">
+              <label>API Key</label>
+              <input id="cfg-apikey" type="password" placeholder="sk-..." />
+              <small>仅保存在浏览器 localStorage,不会上传</small>
+            </div>
+            <div class="form-group">
+              <label>模型</label>
+              <input id="cfg-model" type="text" placeholder="deepseek-chat" />
+              <small>DeepSeek 推荐 deepseek-chat;通义千问推荐 qwen-plus</small>
+            </div>
+            <div class="form-group">
+              <label>人设 (System Prompt)</label>
+              <textarea id="cfg-persona" rows="3" placeholder="你是一个友好的园区智能助手..."></textarea>
+            </div>
+          </div>
+
+          <div id="fay-config" class="sub-section" style="display:none">
+            <h4 class="section-title">Fay 后端配置</h4>
+            <div class="form-group">
+              <label>Fay 后端地址</label>
+              <input id="cfg-fay-url" type="text" placeholder="http://127.0.0.1:5000" />
+              <small>本地启动 Fay:python main.py start,默认 http://127.0.0.1:5000</small>
+            </div>
+            <div class="form-group">
+              <div class="kb-toggle">
+                <input id="cfg-fay-ws" type="checkbox" />
+                <label for="cfg-fay-ws">使用 WebSocket 流式传输(更流畅)</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <button id="btn-fay-ping" class="text-btn" type="button">测试连接</button>
+              <span id="fay-ping-result" style="margin-left:10px;font-size:12px"></span>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label>API Key</label>
-          <input id="cfg-apikey" type="password" placeholder="sk-..." />
-          <small>仅保存在浏览器 localStorage,不会上传。前往 platform.deepseek.com 申请</small>
+
+        <!-- ========== Tab 园区 API ========== -->
+        <div class="tab-panel" id="tab-campus" style="display:none">
+          <h4 class="section-title">园区数据 API 配置</h4>
+          <div class="hint-block">
+            配置园区数据接口后,用户问"今日能耗""离线设备"等问题时会自动调用真实接口。
+            CORS 失败时会自动 fallback 到 JSONP,都失败则返回示例数据(可用于先演示)。
+          </div>
+          <div class="form-group">
+            <label>园区名称 <small>(可选)</small></label>
+            <input id="cfg-campus-name" type="text" placeholder="智慧产业园" />
+          </div>
+          <div class="form-group">
+            <label>今日总能耗接口</label>
+            <input id="cfg-api-energy" type="text" placeholder="http://api.example.com/park/energy/today" />
+            <small>返回 JSON 示例:{"total_kwh":1280,"unit":"kWh","compare_yesterday":-3.2,"by_building":[{"name":"A栋","value":420}]}</small>
+          </div>
+          <div class="form-group">
+            <label>能耗趋势接口</label>
+            <input id="cfg-api-energy-trend" type="text" placeholder="http://api.example.com/park/energy/trend?days=7" />
+            <small>返回 JSON 示例:{"days":[{"date":"8/12","value":1280,"unit":"kWh"},...]}</small>
+          </div>
+          <div class="form-group">
+            <label>设备状态接口</label>
+            <input id="cfg-api-devices" type="text" placeholder="http://api.example.com/park/devices" />
+            <small>返回 JSON 示例:{"offline":[{"building":"A栋","name":"空调机组 #1","type":"暖通"}],"total_offline":5}</small>
+          </div>
+          <div class="form-group">
+            <label>园区概况接口</label>
+            <input id="cfg-api-park-info" type="text" placeholder="http://api.example.com/park/info" />
+            <small>返回 JSON 示例:{"name":"智慧产业园","area":"8.6万㎡","buildings":6,"enterprises":42,"people":2800}</small>
+          </div>
         </div>
-        <div class="form-group">
-          <label>模型</label>
-          <input id="cfg-model" type="text" placeholder="deepseek-chat" />
+
+        <!-- ========== Tab 形象/声音 ========== -->
+        <div class="tab-panel" id="tab-avatar" style="display:none">
+          <h4 class="section-title">数字人基础</h4>
+          <div class="form-group">
+            <label>数字人名称</label>
+            <input id="cfg-name" type="text" placeholder="小助" />
+          </div>
+
+          <h4 class="section-title">自定义头像</h4>
+          <div class="form-group">
+            <label>上传自定义图片 <small>(支持 JPG/PNG,会保存为本地 base64)</small></label>
+            <div class="file-row">
+              <input id="cfg-custom-avatar" type="file" accept="image/*" />
+              <button id="btn-clear-custom" class="text-btn" type="button">恢复默认 SVG</button>
+            </div>
+            <small>上传后立即替换左侧 SVG 形象。</small>
+          </div>
+
+          <h4 class="section-title">语音播报 (TTS)</h4>
+          <div class="form-group">
+            <label>TTS 引擎</label>
+            <select id="cfg-tts-engine">
+              <option value="browser">浏览器 Web Speech (推荐,免费)</option>
+              <option value="fay">使用 Fay 后端 TTS (Fay 模式下可选)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>语音 (浏览器模式)</label>
+            <div class="row">
+              <select id="cfg-voice"></select>
+              <button id="btn-test-voice" class="text-btn" type="button">试听</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>语速 <span id="cfg-rate-val">1.0</span></label>
+            <input id="cfg-rate" type="range" min="0.5" max="2" step="0.1" value="1" />
+          </div>
         </div>
-        <div class="form-group">
-          <label>数字人名称</label>
-          <input id="cfg-name" type="text" placeholder="小助" />
-        </div>
-        <div class="form-group">
-          <label>人设描述 (System Prompt)</label>
-          <textarea id="cfg-persona" rows="4" placeholder="你是一个友好的园区智能助手,负责回答园区能耗、设备等问题。"></textarea>
-        </div>
-        <div class="form-group">
-          <label>TTS 语音</label>
-          <select id="cfg-voice"></select>
-          <button id="btn-test-voice" class="text-btn">试听</button>
-        </div>
-        <div class="form-group">
-          <label>语速 <span id="cfg-rate-val">1.0</span></label>
-          <input id="cfg-rate" type="range" min="0.5" max="2" step="0.1" value="1" />
-        </div>
-        <div class="form-group">
-          <label>知识库匹配 <small>(命中关键词时直接返回预设答案,无需调用 LLM)</small></label>
-          <div class="kb-toggle">
-            <input id="cfg-kb" type="checkbox" checked />
-            <label for="cfg-kb">启用</label>
+
+        <!-- ========== Tab 知识库 ========== -->
+        <div class="tab-panel" id="tab-kb" style="display:none">
+          <h4 class="section-title">知识库匹配</h4>
+          <div class="form-group">
+            <div class="kb-toggle">
+              <input id="cfg-kb" type="checkbox" />
+              <label for="cfg-kb">启用静态知识库 + 园区 API 自动匹配</label>
+            </div>
+          </div>
+          <div class="hint-block">
+            匹配优先级:静态关键词(如"你好""开源")→ 园区 API 动态查询(如"今日能耗""离线设备")→ 调用大模型/ Fay 后端。
+          </div>
+          <div class="form-group">
+            <label>内置匹配规则 <small>(可在 js/knowledge.js 中编辑扩展)</small></label>
+            <div id="kb-rules-list" class="rules-list"></div>
           </div>
         </div>
       </div>
@@ -127,6 +250,7 @@
   <script src="js/speech.js"></script>
   <script src="js/llm.js"></script>
   <script src="js/knowledge.js"></script>
+  <script src="js/fay.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
