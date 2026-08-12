@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 数字人 · 开源验证 Demo</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <h1>AI 数字人</h1>
+      <span class="brand-sub">开源验证 Demo · 浏览器端运行</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="btn-settings" class="icon-btn" title="设置">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <!-- 数字人形象区 -->
+    <section class="avatar-zone">
+      <div class="avatar-stage" id="avatar-stage">
+        <!-- SVG 数字人由 avatar.js 注入 -->
+      </div>
+      <div class="avatar-meta">
+        <div class="status-pill" id="status-pill">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">待命中</span>
+        </div>
+        <div class="persona-switcher" id="persona-switcher">
+          <!-- 形象切换按钮由 app.js 注入 -->
+        </div>
+      </div>
+      <div class="voice-hint" id="voice-hint">
+        点击下方麦克风开始语音对话,或直接文字输入
+      </div>
+    </section>
+
+    <!-- 对话区 -->
+    <section class="chat-zone">
+      <div class="chat-header">
+        <h2>对话</h2>
+        <button id="btn-clear" class="text-btn">清空</button>
+      </div>
+      <div class="chat-log" id="chat-log">
+        <div class="msg msg-bot">
+          <div class="msg-avatar">AI</div>
+          <div class="msg-bubble">你好!我是 AI 数字人。配置好 DeepSeek API Key 后即可开始对话。点击右上角设置按钮进行配置。</div>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <button id="btn-mic" class="mic-btn" title="按住说话 / 点击切换">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+        </button>
+        <input id="text-input" type="text" placeholder="输入消息,回车发送..." autocomplete="off" />
+        <button id="btn-send" class="send-btn">发送</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- 设置弹窗 -->
+  <div class="modal-mask" id="settings-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>设置</h3>
+        <button id="btn-close-settings" class="icon-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>API 地址 (Base URL)</label>
+          <input id="cfg-baseurl" type="text" placeholder="https://api.deepseek.com/v1" />
+          <small>DeepSeek 默认: https://api.deepseek.com/v1</small>
+        </div>
+        <div class="form-group">
+          <label>API Key</label>
+          <input id="cfg-apikey" type="password" placeholder="sk-..." />
+          <small>仅保存在浏览器 localStorage,不会上传。前往 platform.deepseek.com 申请</small>
+        </div>
+        <div class="form-group">
+          <label>模型</label>
+          <input id="cfg-model" type="text" placeholder="deepseek-chat" />
+        </div>
+        <div class="form-group">
+          <label>数字人名称</label>
+          <input id="cfg-name" type="text" placeholder="小助" />
+        </div>
+        <div class="form-group">
+          <label>人设描述 (System Prompt)</label>
+          <textarea id="cfg-persona" rows="4" placeholder="你是一个友好的园区智能助手,负责回答园区能耗、设备等问题。"></textarea>
+        </div>
+        <div class="form-group">
+          <label>TTS 语音</label>
+          <select id="cfg-voice"></select>
+          <button id="btn-test-voice" class="text-btn">试听</button>
+        </div>
+        <div class="form-group">
+          <label>语速 <span id="cfg-rate-val">1.0</span></label>
+          <input id="cfg-rate" type="range" min="0.5" max="2" step="0.1" value="1" />
+        </div>
+        <div class="form-group">
+          <label>知识库匹配 <small>(命中关键词时直接返回预设答案,无需调用 LLM)</small></label>
+          <div class="kb-toggle">
+            <input id="cfg-kb" type="checkbox" checked />
+            <label for="cfg-kb">启用</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-save-settings" class="primary-btn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/avatar.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/llm.js"></script>
+  <script src="js/knowledge.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
